@@ -1,0 +1,51 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import TalkForm from '../../../components/admin/talks/TalkForm';
+import { API_CONFIG } from '../../../utils/api/config';
+
+export const prerender = false;
+
+const adminToken = Astro.cookies.get('adminToken')?.value;
+
+let speakers;
+
+try {
+  // Fetch speakers list
+  const speakersResponse = await fetch(`${API_CONFIG.baseUrl}/api/speakers`, {
+    headers: {
+      ...API_CONFIG.defaultHeaders,
+      'Authorization': `Bearer ${adminToken}`
+    }
+  });
+
+  if (!speakersResponse.ok) {
+    throw new Error('Failed to fetch speakers');
+  }
+
+  speakers = await speakersResponse.json();
+} catch (error) {
+  console.error('Error:', error);
+  return Astro.redirect('/admin/talks');
+}
+
+if (!speakers) {
+  return Astro.redirect('/admin/talks');
+}
+---
+
+<AdminLayout title="New Talk">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a href="/admin/talks" class="text-primary hover:text-secondary">← Back to Talks</a>
+    </div>
+
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+      <h1 class="text-2xl font-bold mb-6 text-white">Create New Talk</h1>
+
+      <TalkForm 
+        speakers={speakers} 
+        client:load 
+      />
+    </div>
+  </div>
+</AdminLayout>

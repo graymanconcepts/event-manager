@@ -1,0 +1,62 @@
+---
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import TalkEditForm from '../../../../components/admin/TalkEditForm';
+
+const { id } = Astro.params;
+const { cookies } = Astro;
+
+if (!id) {
+  return Astro.redirect('/admin/talks');
+}
+
+// Get admin token from cookie
+const token = cookies.get('adminToken')?.value;
+if (!token) {
+  return Astro.redirect('/admin/login');
+}
+
+// Fetch talk data server-side
+let talk;
+try {
+  const response = await fetch(`http://localhost:3000/api/talks/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    credentials: 'include'
+  });
+  
+  if (!response.ok) {
+    if (response.status === 401) {
+      cookies.delete('adminToken');
+      return Astro.redirect('/admin/login');
+    }
+    throw new Error(`Failed to fetch talk details: ${response.statusText}`);
+  }
+  
+  talk = await response.json();
+} catch (error) {
+  console.error('Error:', error);
+  return Astro.redirect('/admin/talks');
+}
+
+// If talk not found, redirect to talks list
+if (!talk) {
+  return Astro.redirect('/admin/talks');
+}
+---
+
+<AdminLayout title={`Edit Talk: ${talk.title}`}>
+  <div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Edit Talk</h1>
+      <a 
+        href="/admin/talks" 
+        class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+      >
+        Back to Talks
+      </a>
+    </div>
+    <TalkEditForm client:load talkId={id} initialData={talk} />
+  </div>
+</AdminLayout>

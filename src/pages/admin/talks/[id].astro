@@ -1,0 +1,207 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { API_CONFIG } from '../../../utils/api/config';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const adminToken = Astro.cookies.get('adminToken')?.value;
+
+if (!id || isNaN(parseInt(id))) {
+  return Astro.redirect('/admin/talks');
+}
+
+let talk;
+let speakers;
+
+try {
+  // Fetch talk details using API client
+  const talkResponse = await fetch(`${API_CONFIG.baseUrl}/api/talks/${id}`, {
+    headers: {
+      ...API_CONFIG.defaultHeaders,
+      'Authorization': `Bearer ${adminToken}`
+    }
+  });
+
+  if (!talkResponse.ok) {
+    throw new Error('Failed to fetch talk details');
+  }
+
+  talk = await talkResponse.json();
+
+  // Fetch speakers list
+  const speakersResponse = await fetch(`${API_CONFIG.baseUrl}/api/speakers`, {
+    headers: {
+      ...API_CONFIG.defaultHeaders,
+      'Authorization': `Bearer ${adminToken}`
+    }
+  });
+
+  if (!speakersResponse.ok) {
+    throw new Error('Failed to fetch speakers');
+  }
+
+  speakers = await speakersResponse.json();
+} catch (error) {
+  console.error('Error:', error);
+  return Astro.redirect('/admin/talks');
+}
+
+if (!talk || !speakers) {
+  return Astro.redirect('/admin/talks');
+}
+---
+
+<AdminLayout title={`Edit Talk: ${talk.title}`}>
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a href="/admin/talks" class="text-primary hover:text-secondary">← Back to Talks</a>
+    </div>
+
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+      <h1 class="text-2xl font-bold mb-6 text-white">Edit Talk: {talk.title}</h1>
+
+      <form id="editTalkForm" class="space-y-6">
+        <input type="hidden" id="talkId" value={id} />
+        
+        <div>
+          <label for="title" class="block text-sm font-medium mb-1 text-gray-200">Title</label>
+          <input 
+            type="text" 
+            id="title" 
+            name="title" 
+            value={talk.title}
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+            required 
+          />
+        </div>
+
+        <div>
+          <label for="description" class="block text-sm font-medium mb-1 text-gray-200">Description</label>
+          <textarea 
+            id="description" 
+            name="description" 
+            rows="4" 
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary"
+            required
+          >{talk.description}</textarea>
+        </div>
+
+        <div>
+          <label for="speaker_id" class="block text-sm font-medium mb-1 text-gray-200">Speaker</label>
+          <select 
+            id="speaker_id" 
+            name="speaker_id" 
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary"
+            required
+          >
+            {speakers.map((speaker) => (
+              <option 
+                value={speaker.id} 
+                selected={speaker.id === talk.speaker_id}
+              >
+                {speaker.name} ({speaker.company})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="start_time" class="block text-sm font-medium mb-1 text-gray-200">Start Time</label>
+            <input 
+              type="datetime-local" 
+              id="start_time" 
+              name="start_time"
+              value={new Date(talk.start_time).toISOString().slice(0, 16)}
+              class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary"
+              required 
+            />
+          </div>
+
+          <div>
+            <label for="end_time" class="block text-sm font-medium mb-1 text-gray-200">End Time</label>
+            <input 
+              type="datetime-local" 
+              id="end_time" 
+              name="end_time"
+              value={new Date(talk.end_time).toISOString().slice(0, 16)}
+              class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary"
+              required 
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="room" class="block text-sm font-medium mb-1 text-gray-200">Room</label>
+          <input 
+            type="text" 
+            id="room" 
+            name="room"
+            value={talk.room}
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary"
+            required 
+          />
+        </div>
+
+        <div class="flex justify-end space-x-4">
+          <button
+            type="button"
+            onclick="window.location.href='/admin/talks'"
+            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-primary text-white rounded hover:bg-secondary transition-colors"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('editTalkForm');
+    const talkId = document.getElementById('talkId').value;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const talkData = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        speaker_id: parseInt(formData.get('speaker_id')),
+        start_time: new Date(formData.get('start_time')).toISOString(),
+        end_time: new Date(formData.get('end_time')).toISOString(),
+        room: formData.get('room')
+      };
+
+      try {
+        const response = await fetch(`/api/talks/${talkId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          },
+          body: JSON.stringify(talkData)
+        });
+
+        if (response.ok) {
+          window.location.href = '/admin/talks';
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Failed to update talk');
+        }
+      } catch (error) {
+        console.error('Error updating talk:', error);
+        alert('Failed to update talk');
+      }
+    });
+  });
+</script>

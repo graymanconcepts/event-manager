@@ -1,0 +1,150 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+export const prerender = false;
+---
+
+<AdminLayout title="Add Event">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a href="/admin/schedule" class="text-primary hover:text-secondary">← Back to Schedule</a>
+    </div>
+
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+      <h1 class="text-2xl font-bold mb-6 text-white">Add Event</h1>
+
+      <form id="addEventForm" class="space-y-6">
+        <div>
+          <label for="title" class="block text-sm font-medium mb-1 text-gray-200">Event Title</label>
+          <input 
+            type="text" 
+            id="title" 
+            name="title" 
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+            required 
+            placeholder="e.g., Opening Keynote, Lunch Break"
+          />
+        </div>
+
+        <div>
+          <label for="description" class="block text-sm font-medium mb-1 text-gray-200">Description</label>
+          <textarea 
+            id="description" 
+            name="description" 
+            rows="4" 
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary"
+            placeholder="Event description..."
+          ></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="start_time" class="block text-sm font-medium mb-1 text-gray-200">Start Time</label>
+            <input 
+              type="datetime-local" 
+              id="start_time" 
+              name="start_time" 
+              class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary" 
+              required 
+            />
+          </div>
+
+          <div>
+            <label for="end_time" class="block text-sm font-medium mb-1 text-gray-200">End Time</label>
+            <input 
+              type="datetime-local" 
+              id="end_time" 
+              name="end_time" 
+              class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary" 
+              required 
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="location" class="block text-sm font-medium mb-1 text-gray-200">Location</label>
+          <input 
+            type="text" 
+            id="location" 
+            name="location" 
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+            placeholder="e.g., Main Hall, Dining Area"
+          />
+        </div>
+
+        <div>
+          <label for="type" class="block text-sm font-medium mb-1 text-gray-200">Event Type</label>
+          <select 
+            id="type" 
+            name="type" 
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary"
+            required
+          >
+            <option value="keynote">Keynote</option>
+            <option value="break">Break</option>
+            <option value="meal">Meal</option>
+            <option value="networking">Networking</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end space-x-4">
+          <button
+            type="button"
+            onclick="window.location.href='/admin/schedule'"
+            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-primary text-white rounded hover:bg-secondary transition-colors"
+          >
+            Create Event
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('addEventForm');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const eventData = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        start_time: new Date(formData.get('start_time')).toISOString(),
+        end_time: new Date(formData.get('end_time')).toISOString(),
+        location: formData.get('location'),
+        type: formData.get('type')
+      };
+
+      try {
+        const response = await fetch('/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          },
+          body: JSON.stringify(eventData)
+        });
+
+        if (response.ok) {
+          window.location.href = '/admin/schedule';
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Failed to create event');
+        }
+      } catch (error) {
+        console.error('Error creating event:', error);
+        alert('Failed to create event');
+      }
+    });
+  });
+</script>

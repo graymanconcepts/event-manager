@@ -1,0 +1,193 @@
+---
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { API_CONFIG } from '../../../../utils/api/config';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const adminToken = Astro.cookies.get('adminToken')?.value;
+
+if (!id || isNaN(parseInt(id))) {
+  return Astro.redirect('/admin/speakers');
+}
+
+let speaker;
+
+try {
+  // Fetch speaker details
+  const speakerResponse = await fetch(`${API_CONFIG.baseUrl}/api/speakers/${id}`, {
+    headers: {
+      ...API_CONFIG.defaultHeaders,
+      'Authorization': `Bearer ${adminToken}`
+    }
+  });
+
+  if (!speakerResponse.ok) {
+    throw new Error('Failed to fetch speaker details');
+  }
+
+  speaker = await speakerResponse.json();
+} catch (error) {
+  console.error('Error:', error);
+  return Astro.redirect('/admin/speakers');
+}
+
+if (!speaker) {
+  return Astro.redirect('/admin/speakers');
+}
+---
+
+<AdminLayout title={`Edit Speaker: ${speaker.name}`}>
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a href="/admin/speakers" class="text-primary hover:text-secondary">← Back to Speakers</a>
+    </div>
+
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+      <h1 class="text-2xl font-bold mb-6 text-white">Edit Speaker: {speaker.name}</h1>
+
+      <form id="editSpeakerForm" class="space-y-6">
+        <input type="hidden" id="speakerId" value={id} />
+        
+        <div>
+          <label for="name" class="block text-sm font-medium mb-1 text-gray-200">Name</label>
+          <input 
+            type="text" 
+            id="name" 
+            name="name" 
+            value={speaker.name}
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+            required 
+          />
+        </div>
+
+        <div>
+          <label for="bio" class="block text-sm font-medium mb-1 text-gray-200">Bio</label>
+          <textarea 
+            id="bio" 
+            name="bio" 
+            rows="4" 
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary"
+            required
+          >{speaker.bio}</textarea>
+        </div>
+
+        <div>
+          <label for="company" class="block text-sm font-medium mb-1 text-gray-200">Company</label>
+          <input 
+            type="text" 
+            id="company" 
+            name="company" 
+            value={speaker.company}
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+            required 
+          />
+        </div>
+
+        <div>
+          <label for="role" class="block text-sm font-medium mb-1 text-gray-200">Role</label>
+          <input 
+            type="text" 
+            id="role" 
+            name="role" 
+            value={speaker.role}
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+            required 
+          />
+        </div>
+
+        <div>
+          <label for="image_url" class="block text-sm font-medium mb-1 text-gray-200">Profile Image URL</label>
+          <input 
+            type="url" 
+            id="image_url" 
+            name="image_url" 
+            value={speaker.image_url}
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+          />
+        </div>
+
+        <div>
+          <label for="twitter" class="block text-sm font-medium mb-1 text-gray-200">Twitter Handle</label>
+          <input 
+            type="text" 
+            id="twitter" 
+            name="twitter" 
+            value={speaker.twitter}
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+          />
+        </div>
+
+        <div>
+          <label for="github" class="block text-sm font-medium mb-1 text-gray-200">GitHub Username</label>
+          <input 
+            type="text" 
+            id="github" 
+            name="github" 
+            value={speaker.github}
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+          />
+        </div>
+
+        <div class="flex justify-end space-x-4">
+          <button
+            type="button"
+            onclick="window.location.href='/admin/speakers'"
+            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-primary text-white rounded hover:bg-secondary transition-colors"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('editSpeakerForm');
+    const speakerId = document.getElementById('speakerId').value;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const speakerData = {
+        name: formData.get('name'),
+        bio: formData.get('bio'),
+        company: formData.get('company'),
+        role: formData.get('role'),
+        image_url: formData.get('image_url'),
+        twitter: formData.get('twitter'),
+        github: formData.get('github')
+      };
+
+      try {
+        const response = await fetch(`/api/speakers/${speakerId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          },
+          body: JSON.stringify(speakerData)
+        });
+
+        if (response.ok) {
+          window.location.href = '/admin/speakers';
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Failed to update speaker');
+        }
+      } catch (error) {
+        console.error('Error updating speaker:', error);
+        alert('Failed to update speaker');
+      }
+    });
+  });
+</script>

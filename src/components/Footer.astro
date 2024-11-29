@@ -1,0 +1,31 @@
+---
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="bg-gray-800 text-white py-8 mt-auto">
+  <div class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div>
+        <h3 class="text-lg font-bold mb-4">TechConf 2024</h3>
+        <p>Join us for the premier tech conference of the year.</p>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold mb-4">Quick Links</h3>
+        <ul class="space-y-2">
+          <li><a href="/schedule" class="hover:text-gray-300 transition-colors">Schedule</a></li>
+          <li><a href="/speakers" class="hover:text-gray-300 transition-colors">Speakers</a></li>
+          <li><a href="/register" class="hover:text-gray-300 transition-colors">Register</a></li>
+          <li><a href="/admin" class="hover:text-gray-300 transition-colors">Admin</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold mb-4">Contact</h3>
+        <p>Email: info@techconf.com</p>
+        <p>Phone: (555) 123-4567</p>
+      </div>
+    </div>
+    <div class="mt-8 pt-4 text-center border-t border-gray-700">
+      <p>&copy; {currentYear} TechConf. All rights reserved.</p>
+    </div>
+  </div>
+</footer>

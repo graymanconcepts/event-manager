@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import SpeakerList from '../../../components/admin/speakers/SpeakerList';
+---
+
+<AdminLayout title="Manage Speakers">
+  <SpeakerList client:load />
+</AdminLayout>

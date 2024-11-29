@@ -1,0 +1,118 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { API_CONFIG } from '../../utils/api/config';
+
+// Fetch talks with speaker information
+const response = await fetch(`${API_CONFIG.baseUrl}/api/talks`, {
+  headers: API_CONFIG.defaultHeaders
+});
+const talks = await response.json();
+
+// Fetch all speakers
+const speakersResponse = await fetch(`${API_CONFIG.baseUrl}/api/speakers`, {
+  headers: API_CONFIG.defaultHeaders
+});
+const speakers = await speakersResponse.json();
+
+// Create a map of speaker IDs to speaker objects for easy lookup
+const speakersMap = speakers.reduce((acc, speaker) => {
+  acc[speaker.id] = speaker;
+  return acc;
+}, {});
+---
+
+<AdminLayout title="Manage Talks">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Manage Talks</h1>
+      <a
+        href="/admin/talks/new"
+        class="bg-primary hover:bg-secondary text-white font-bold py-2 px-4 rounded"
+      >
+        Add New Talk
+      </a>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-700">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Title</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Speaker</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Start Time</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Room</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          {talks.map((talk) => {
+            const speaker = speakersMap[talk.speaker_id];
+            return (
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                  {talk.title}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                  {speaker ? `${speaker.name} (${speaker.company})` : 'No speaker assigned'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                  {new Date(talk.start_time).toLocaleString()}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                  {talk.room}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <a
+                    href={`/admin/talks/${talk.id}`}
+                    class="text-primary hover:text-secondary mr-4"
+                  >
+                    Edit
+                  </a>
+                  <button
+                    data-talk-id={talk.id}
+                    class="text-red-600 hover:text-red-900 delete-talk"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  // Handle talk deletion
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.delete-talk').forEach(button => {
+      button.addEventListener('click', async (e) => {
+        const talkId = e.target.dataset.talkId;
+        if (!confirm('Are you sure you want to delete this talk?')) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/talks/${talkId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            }
+          });
+
+          if (response.ok) {
+            // Reload the page to show updated list
+            window.location.reload();
+          } else {
+            alert('Failed to delete talk');
+          }
+        } catch (error) {
+          console.error('Error deleting talk:', error);
+          alert('Failed to delete talk');
+        }
+      });
+    });
+  });
+</script>

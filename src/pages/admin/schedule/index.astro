@@ -1,0 +1,157 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+export const prerender = false;
+
+const adminToken = Astro.cookies.get('adminToken')?.value;
+
+// Fetch both talks and events
+let talks = [];
+let events = [];
+
+try {
+  const [talksResponse, eventsResponse] = await Promise.all([
+    fetch('http://localhost:3000/api/talks', {
+      headers: {
+        'Authorization': `Bearer ${adminToken}`
+      }
+    }),
+    fetch('http://localhost:3000/api/events', {
+      headers: {
+        'Authorization': `Bearer ${adminToken}`
+      }
+    })
+  ]);
+
+  if (talksResponse.ok) {
+    talks = await talksResponse.json();
+  }
+  if (eventsResponse.ok) {
+    events = await eventsResponse.json();
+  }
+} catch (error) {
+  console.error('Error fetching schedule data:', error);
+}
+
+// Combine and sort all schedule items
+const scheduleItems = [
+  ...talks.map(talk => ({
+    ...talk,
+    type: 'talk',
+    start: new Date(talk.start_time),
+    end: new Date(talk.end_time)
+  })),
+  ...events.map(event => ({
+    ...event,
+    type: 'event',
+    start: new Date(event.start_time),
+    end: new Date(event.end_time)
+  }))
+].sort((a, b) => a.start - b.start);
+
+// Group items by date
+const groupedSchedule = scheduleItems.reduce((groups, item) => {
+  const date = item.start.toLocaleDateString();
+  if (!groups[date]) {
+    groups[date] = [];
+  }
+  groups[date].push(item);
+  return groups;
+}, {});
+---
+
+<AdminLayout title="Conference Schedule">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-white">Conference Schedule</h1>
+      <div class="space-x-4">
+        <a
+          href="/admin/events/new"
+          class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors"
+        >
+          Add Event
+        </a>
+        <a
+          href="/admin/talks/new"
+          class="px-4 py-2 bg-primary text-white rounded hover:bg-secondary transition-colors"
+        >
+          Add Talk
+        </a>
+      </div>
+    </div>
+
+    {Object.entries(groupedSchedule).map(([date, items]) => (
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4 text-gray-200">
+          {new Date(date).toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}
+        </h2>
+        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+          <div class="divide-y divide-gray-700">
+            {items.map((item) => (
+              <div class="p-4 hover:bg-gray-700 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center space-x-2">
+                      {item.type === 'event' ? (
+                        <span class="px-2 py-1 text-xs font-medium bg-gray-600 text-white rounded">
+                          {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                        </span>
+                      ) : (
+                        <span class="px-2 py-1 text-xs font-medium bg-primary text-white rounded">
+                          Talk
+                        </span>
+                      )}
+                      <h3 class="text-lg font-medium text-white">
+                        {item.title}
+                      </h3>
+                    </div>
+                    {item.type === 'talk' && (
+                      <p class="text-gray-400 mt-1">
+                        Speaker: {item.speaker_name} • Room: {item.room}
+                      </p>
+                    )}
+                    {item.type === 'event' && (
+                      <p class="text-gray-400 mt-1">
+                        {item.location && `Location: ${item.location}`}
+                        {item.description && ` • ${item.description}`}
+                      </p>
+                    )}
+                  </div>
+                  <div class="flex items-center space-x-4">
+                    <div class="text-right text-sm text-gray-400">
+                      <div>
+                        {item.start.toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                      <div>
+                        {item.end.toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                    <a
+                      href={`/admin/${item.type}s/${item.id}/edit`}
+                      class="p-2 text-gray-400 hover:text-white transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</AdminLayout>

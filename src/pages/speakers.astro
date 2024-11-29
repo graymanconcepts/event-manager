@@ -1,0 +1,41 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SpeakerCard from '../components/SpeakerCard';
+import { apiRequest } from '../utils/api/client';
+import { API_CONFIG } from '../utils/api/config';
+import type { Speaker } from '../utils/api/types';
+
+let speakers: Speaker[] = [];
+let error: string | null = null;
+
+try {
+  speakers = await apiRequest<Speaker[]>(API_CONFIG.endpoints.speakers.list, { skipAuth: true });
+} catch (err) {
+  console.error('Error fetching speakers:', err);
+  error = 'Failed to load speakers. Please try again later.';
+}
+---
+
+<Layout title="Speakers - TechConf 2024">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-4xl font-bold mb-8 text-center">Our Speakers</h1>
+    
+    {error && (
+      <div class="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-4 rounded-lg mb-8 text-center">
+        {error}
+      </div>
+    )}
+    
+    {!error && speakers.length === 0 && (
+      <div class="text-center text-gray-600 dark:text-gray-400">
+        <p>No speakers have been announced yet. Check back soon!</p>
+      </div>
+    )}
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {speakers.map(speaker => (
+        <SpeakerCard speaker={speaker} client:load />
+      ))}
+    </div>
+  </div>
+</Layout>

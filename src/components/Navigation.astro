@@ -1,0 +1,48 @@
+---
+const links = [
+  { href: '/', text: 'Home' },
+  { href: '/speakers', text: 'Speakers' },
+  { href: '/talks', text: 'Talks' },
+  { href: '/schedule', text: 'Schedule' },
+  { href: '/contact', text: 'Contact' }
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<nav class="fixed w-full z-50 bg-gray-900 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between h-16">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <a href="/" class="text-xl font-bold text-blue-400 hover:text-blue-300 transition-colors">Tech Conference</a>
+        </div>
+        <div class="hidden sm:ml-8 sm:flex sm:space-x-4">
+          {links.map(link => (
+            <a 
+              href={link.href} 
+              class={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                (currentPath === link.href || (link.href !== '/' && currentPath.startsWith(link.href))) 
+                ? 'bg-gray-800 text-white' 
+                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
+            >
+              {link.text}
+            </a>
+          ))}
+        </div>
+      </div>
+      <div class="flex items-center">
+        <a 
+          href="/admin" 
+          class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+        >
+          Admin
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile menu spacer to prevent content from hiding under fixed nav -->
+<div class="h-16"></div>

@@ -1,0 +1,95 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="TechConf 2024 - Home">
+  <!-- Hero Section -->
+  <div class="pt-16">
+    <div class="h-[600px] relative">
+      <div class="absolute inset-0 bg-gradient-to-r from-primary/90 to-secondary/90 mix-blend-multiply"></div>
+      <div 
+        class="absolute inset-0 bg-cover bg-center"
+        style="background-image: url('https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=2070');"></div>
+      <div class="absolute inset-0 bg-black/20"></div>
+      <div class="relative h-full container mx-auto px-4 flex flex-col justify-center items-center text-white text-center">
+        <h1 class="text-6xl md:text-7xl font-bold mb-6 drop-shadow-lg">
+          TechConf 2024
+        </h1>
+        <p class="text-2xl md:text-3xl mb-8 max-w-2xl drop-shadow-lg">
+          Where Innovation Meets Implementation
+        </p>
+        <div class="space-x-4">
+          <a 
+            href="/register" 
+            class="inline-block bg-white text-primary px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-lg">
+            Register Now
+          </a>
+          <a 
+            href="/schedule" 
+            class="inline-block bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold text-lg">
+            View Schedule
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-4">
+    <!-- Key Info Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+      <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform">
+        <div class="text-primary dark:text-primary-300 text-4xl font-bold mb-2">50+</div>
+        <h3 class="text-xl font-bold mb-2">Industry Experts</h3>
+        <p class="text-gray-600 dark:text-gray-300">Learn from the best minds in tech</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform">
+        <div class="text-primary dark:text-primary-300 text-4xl font-bold mb-2">3</div>
+        <h3 class="text-xl font-bold mb-2">Days of Learning</h3>
+        <p class="text-gray-600 dark:text-gray-300">Packed with workshops and talks</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform">
+        <div class="text-primary dark:text-primary-300 text-4xl font-bold mb-2">1000+</div>
+        <h3 class="text-xl font-bold mb-2">Attendees</h3>
+        <p class="text-gray-600 dark:text-gray-300">Network with global tech leaders</p>
+      </div>
+    </div>
+
+    <!-- Featured Section -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 mb-16">
+      <div class="grid md:grid-cols-2 gap-8 items-center">
+        <div>
+          <h2 class="text-3xl font-bold mb-4">June 15-17, 2024</h2>
+          <p class="text-xl mb-4">San Francisco Convention Center</p>
+          <ul class="space-y-3 text-gray-600 dark:text-gray-300 mb-6">
+            <li class="flex items-center">
+              <svg class="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Keynotes from Industry Leaders
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Hands-on Workshops
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Networking Events
+            </li>
+          </ul>
+        </div>
+        <div class="relative h-64 rounded-lg overflow-hidden">
+          <img 
+            src="https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&q=80&w=1740" 
+            alt="Conference Hall" 
+            class="absolute inset-0 w-full h-full object-cover"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

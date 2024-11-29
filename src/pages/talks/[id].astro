@@ -1,0 +1,111 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import TalkRegistrationForm from '../../components/registration/TalkRegistrationForm';
+import { API_CONFIG } from '../../utils/api/config';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+
+if (!id || isNaN(parseInt(id))) {
+  return Astro.redirect('/talks');
+}
+
+let talk;
+let speaker;
+
+try {
+  // Fetch talk details
+  const talkResponse = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.talks.get(parseInt(id))}`, {
+    headers: API_CONFIG.defaultHeaders
+  });
+
+  if (!talkResponse.ok) {
+    return Astro.redirect('/talks');
+  }
+
+  talk = await talkResponse.json();
+
+  // Fetch speaker details
+  const speakerResponse = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.speakers.get(talk.speaker_id)}`, {
+    headers: API_CONFIG.defaultHeaders
+  });
+
+  if (!speakerResponse.ok) {
+    return Astro.redirect('/talks');
+  }
+
+  speaker = await speakerResponse.json();
+} catch (error) {
+  console.error('Error fetching talk data:', error);
+  return Astro.redirect('/talks');
+}
+
+if (!talk || !speaker) {
+  return Astro.redirect('/talks');
+}
+---
+
+<Layout title={talk.title}>
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
+      <h1 class="text-3xl font-bold mb-4">{talk.title}</h1>
+      
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-2">Speaker</h2>
+        <div class="flex items-center">
+          {speaker.image_url && (
+            <img
+              src={speaker.image_url}
+              alt={speaker.name}
+              class="w-12 h-12 rounded-full mr-4"
+            />
+          )}
+          <div>
+            <p class="font-medium">{speaker.name}</p>
+            <p class="text-gray-600 dark:text-gray-400">{speaker.role} at {speaker.company}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-2">Details</h2>
+        <p class="text-gray-700 dark:text-gray-300 mb-4">{talk.description}</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="font-medium">Start Time</p>
+            <p class="text-gray-600 dark:text-gray-400">
+              {new Date(talk.start_time).toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <p class="font-medium">End Time</p>
+            <p class="text-gray-600 dark:text-gray-400">
+              {new Date(talk.end_time).toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <p class="font-medium">Room</p>
+            <p class="text-gray-600 dark:text-gray-400">{talk.room}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+      <h2 class="text-2xl font-bold mb-6">Register for this Talk</h2>
+      <TalkRegistrationForm 
+        client:load 
+        talkId={parseInt(id)} 
+        talkTitle={talk.title}
+      />
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Client-side script for form handling
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('Talk registration page loaded');
+  });
+</script>

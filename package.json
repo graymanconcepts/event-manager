@@ -1,0 +1,47 @@
+{
+  "name": "tech-conference",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n \"backend,frontend\" -c \"blue,green\" \"npm run dev:backend\" \"wait-on tcp:3000 && npm run dev:frontend\"",
+    "dev:frontend": "astro dev",
+    "dev:backend": "node server/index.js",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^8.3.4",
+    "@astrojs/react": "^3.1.0",
+    "@astrojs/tailwind": "^5.1.0",
+    "@types/js-cookie": "^3.0.6",
+    "@types/react": "^18.2.67",
+    "@types/react-dom": "^18.2.22",
+    "@types/react-router-dom": "^5.3.3",
+    "astro": "^4.15.3",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^9.4.3",
+    "concurrently": "^8.2.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.3",
+    "express-jwt": "^8.4.1",
+    "js-cookie": "^3.0.5",
+    "jsonwebtoken": "^9.0.2",
+    "marked": "^12.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^9.0.1",
+    "react-router-dom": "^6.22.3",
+    "tailwindcss": "^3.4.1",
+    "wait-on": "^7.2.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.9",
+    "@types/node": "^20.11.28",
+    "typescript": "^5.4.2"
+  }
+}

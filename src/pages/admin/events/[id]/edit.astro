@@ -1,0 +1,192 @@
+---
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { API_CONFIG } from '../../../../utils/api/config';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const adminToken = Astro.cookies.get('adminToken')?.value;
+
+if (!id || isNaN(parseInt(id))) {
+  return Astro.redirect('/admin/schedule');
+}
+
+let event;
+
+try {
+  const eventResponse = await fetch(`${API_CONFIG.baseUrl}/api/events/${id}`, {
+    headers: {
+      ...API_CONFIG.defaultHeaders,
+      'Authorization': `Bearer ${adminToken}`
+    }
+  });
+
+  if (!eventResponse.ok) {
+    throw new Error('Failed to fetch event details');
+  }
+
+  event = await eventResponse.json();
+} catch (error) {
+  console.error('Error:', error);
+  return Astro.redirect('/admin/schedule');
+}
+
+if (!event) {
+  return Astro.redirect('/admin/schedule');
+}
+
+// Format datetime-local string
+const formatDateTimeLocal = (dateString) => {
+  const date = new Date(dateString);
+  return date.toISOString().slice(0, 16);
+};
+---
+
+<AdminLayout title={`Edit Event: ${event.title}`}>
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a href="/admin/schedule" class="text-primary hover:text-secondary">← Back to Schedule</a>
+    </div>
+
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+      <h1 class="text-2xl font-bold mb-6 text-white">Edit Event: {event.title}</h1>
+
+      <form id="editEventForm" class="space-y-6">
+        <input type="hidden" id="eventId" value={id} />
+        
+        <div>
+          <label for="title" class="block text-sm font-medium mb-1 text-gray-200">Event Title</label>
+          <input 
+            type="text" 
+            id="title" 
+            name="title" 
+            value={event.title}
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+            required 
+          />
+        </div>
+
+        <div>
+          <label for="description" class="block text-sm font-medium mb-1 text-gray-200">Description</label>
+          <textarea 
+            id="description" 
+            name="description" 
+            rows="4" 
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary"
+          >{event.description}</textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="start_time" class="block text-sm font-medium mb-1 text-gray-200">Start Time</label>
+            <input 
+              type="datetime-local" 
+              id="start_time" 
+              name="start_time" 
+              value={formatDateTimeLocal(event.start_time)}
+              class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary" 
+              required 
+            />
+          </div>
+
+          <div>
+            <label for="end_time" class="block text-sm font-medium mb-1 text-gray-200">End Time</label>
+            <input 
+              type="datetime-local" 
+              id="end_time" 
+              name="end_time" 
+              value={formatDateTimeLocal(event.end_time)}
+              class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary" 
+              required 
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="location" class="block text-sm font-medium mb-1 text-gray-200">Location</label>
+          <input 
+            type="text" 
+            id="location" 
+            name="location" 
+            value={event.location}
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-primary focus:border-primary" 
+          />
+        </div>
+
+        <div>
+          <label for="type" class="block text-sm font-medium mb-1 text-gray-200">Event Type</label>
+          <select 
+            id="type" 
+            name="type" 
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary"
+            required
+          >
+            <option value="keynote" selected={event.type === 'keynote'}>Keynote</option>
+            <option value="break" selected={event.type === 'break'}>Break</option>
+            <option value="meal" selected={event.type === 'meal'}>Meal</option>
+            <option value="networking" selected={event.type === 'networking'}>Networking</option>
+            <option value="other" selected={event.type === 'other'}>Other</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end space-x-4">
+          <button
+            type="button"
+            onclick="window.location.href='/admin/schedule'"
+            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-primary text-white rounded hover:bg-secondary transition-colors"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('editEventForm');
+    const eventId = document.getElementById('eventId').value;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const eventData = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        start_time: new Date(formData.get('start_time')).toISOString(),
+        end_time: new Date(formData.get('end_time')).toISOString(),
+        location: formData.get('location'),
+        type: formData.get('type')
+      };
+
+      try {
+        const response = await fetch(`/api/events/${eventId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          },
+          body: JSON.stringify(eventData)
+        });
+
+        if (response.ok) {
+          window.location.href = '/admin/schedule';
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Failed to update event');
+        }
+      } catch (error) {
+        console.error('Error updating event:', error);
+        alert('Failed to update event');
+      }
+    });
+  });
+</script>

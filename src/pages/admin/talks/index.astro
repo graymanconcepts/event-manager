@@ -1,0 +1,10 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import TalkList from '../../../components/admin/talks/TalkList';
+
+export const prerender = false;
+---
+
+<AdminLayout title="Manage Talks">
+  <TalkList client:load />
+</AdminLayout>

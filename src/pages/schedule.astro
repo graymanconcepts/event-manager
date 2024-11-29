@@ -1,0 +1,90 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ScheduleCard from '../components/ScheduleCard';
+import { apiRequest } from '../utils/api/client';
+import { API_CONFIG } from '../utils/api/config';
+import type { Talk } from '../utils/api/types';
+
+let talks: Talk[] = [];
+let error: string | null = null;
+
+try {
+  talks = await apiRequest<Talk[]>(API_CONFIG.endpoints.talks.list, { skipAuth: true });
+} catch (err) {
+  console.error('Error fetching talks:', err);
+  error = 'Failed to load schedule. Please try again later.';
+}
+
+// Group talks by date
+const talksByDate = talks.reduce((acc: { [key: string]: Talk[] }, talk) => {
+  const date = new Date(talk.start_time);
+  if (isNaN(date.getTime())) {
+    // Handle invalid dates by grouping them under "Unscheduled"
+    if (!acc["Unscheduled"]) {
+      acc["Unscheduled"] = [];
+    }
+    acc["Unscheduled"].push(talk);
+    return acc;
+  }
+
+  const dateStr = date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  });
+  
+  if (!acc[dateStr]) {
+    acc[dateStr] = [];
+  }
+  acc[dateStr].push(talk);
+  return acc;
+}, {});
+
+// Sort talks within each day by start time
+Object.values(talksByDate).forEach(dayTalks => {
+  dayTalks.sort((a, b) => {
+    const aTime = new Date(a.start_time).getTime();
+    const bTime = new Date(b.start_time).getTime();
+    if (isNaN(aTime) || isNaN(bTime)) return 0;
+    return aTime - bTime;
+  });
+});
+
+// Sort days chronologically, keeping "Unscheduled" at the end
+const sortedDates = Object.keys(talksByDate).sort((a, b) => {
+  if (a === "Unscheduled") return 1;
+  if (b === "Unscheduled") return -1;
+  return new Date(a).getTime() - new Date(b).getTime();
+});
+---
+
+<Layout title="Schedule - TechConf 2024">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-4xl font-bold mb-8 text-center">Conference Schedule</h1>
+    
+    {error && (
+      <div class="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-4 rounded-lg mb-8 text-center">
+        {error}
+      </div>
+    )}
+    
+    {!error && sortedDates.length === 0 && (
+      <div class="text-center text-gray-600 dark:text-gray-400">
+        <p>No talks have been scheduled yet. Check back soon!</p>
+      </div>
+    )}
+    
+    <div class="space-y-8">
+      {sortedDates.map(date => (
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <h2 class="text-2xl font-bold mb-6 text-blue-600 dark:text-blue-400">{date}</h2>
+          <div class="space-y-6">
+            {talksByDate[date].map(talk => (
+              <ScheduleCard talk={talk} client:load />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</Layout>
