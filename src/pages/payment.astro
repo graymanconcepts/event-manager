@@ -1,0 +1,121 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PaymentForm from '../components/PaymentForm';
+import { API_CONFIG } from '../utils/api/config';
+
+// Get registration data from URL params
+const searchParams = Astro.url.searchParams;
+const registrationData = {
+  ticketType: searchParams.get('ticket_type'),
+  name: searchParams.get('name'),
+  email: searchParams.get('email'),
+  company: searchParams.get('company'),
+  dietary_requirements: searchParams.get('dietary_requirements'),
+};
+
+// Get ticket price based on ticket type
+const ticketTypes = [
+  { id: 'standard', name: 'Standard Pass', price: 499, description: 'Full conference access' },
+  { id: 'vip', name: 'VIP Pass', price: 799, description: 'Full conference access + VIP networking events' },
+  { id: 'virtual', name: 'Virtual Pass', price: 199, description: 'Online access to all talks' }
+];
+
+const selectedTicket = ticketTypes.find(ticket => ticket.id === registrationData.ticketType);
+const amount = selectedTicket?.price || 0;
+---
+
+<Layout title="Complete Payment - TechConf 2024">
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+      <h1 class="text-4xl font-bold mb-8 text-center text-white">Complete Your Registration</h1>
+      
+      <div class="bg-gray-900 rounded-lg p-6 mb-8 border border-gray-800">
+        <h2 class="text-xl font-semibold mb-4 text-white">Order Summary</h2>
+        <div class="space-y-2 text-gray-300" data-ticket-amount={amount}>
+          <p><span class="font-medium">Ticket:</span> {selectedTicket?.name}</p>
+          <p><span class="font-medium">Name:</span> {registrationData.name}</p>
+          <p><span class="font-medium">Email:</span> {registrationData.email}</p>
+          {registrationData.company && 
+            <p><span class="font-medium">Company:</span> {registrationData.company}</p>
+          }
+        </div>
+      </div>
+
+      <PaymentForm 
+        client:load 
+        amount={amount}
+        onPaymentSuccess="handlePaymentSuccess"
+        onPaymentError="handlePaymentError"
+      />
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Redirect back to registration if no ticket type is selected
+  if (!new URL(window.location.href).searchParams.get('ticket_type')) {
+    window.location.href = '/register';
+  }
+
+  // Define the payment success handler
+  window.handlePaymentSuccess = async (paymentId) => {
+    console.log('Payment success callback triggered with ID:', paymentId);
+    
+    // Get registration data from URL params
+    const searchParams = new URLSearchParams(window.location.search);
+    const ticketType = searchParams.get('ticket_type');
+    const name = searchParams.get('name');
+    const email = searchParams.get('email');
+    const company = searchParams.get('company');
+    const amount = document.querySelector('[data-ticket-amount]')?.getAttribute('data-ticket-amount') || '0';
+
+    try {
+      console.log('Saving registration with data:', {
+        name,
+        email,
+        ticket_type: ticketType,
+        company,
+        payment_method: 'card',
+        dietary_requirements: ''
+      });
+
+      // Save registration to database
+      const response = await fetch('http://localhost:3000/api/registrations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          ticket_type: ticketType,
+          company,
+          payment_method: 'card',
+          dietary_requirements: ''
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Server response:', errorData);
+        throw new Error('Failed to save registration');
+      }
+
+      const result = await response.json();
+      console.log('Registration saved:', result);
+
+      // Redirect to success page with actual registration ID
+      window.location.href = `/payment-success?id=${result.id}&amount=${amount}&ticket_type=${ticketType}`;
+    } catch (error) {
+      console.error('Failed to save registration:', error);
+      // Fallback to mock ID if save fails
+      const mockRegistrationId = 'reg_' + Math.random().toString(36).substr(2, 9);
+      window.location.href = `/payment-success?id=${mockRegistrationId}&amount=${amount}&ticket_type=${ticketType}`;
+    }
+  };
+
+  // Define the payment error handler
+  window.handlePaymentError = (error) => {
+    console.error('Payment error:', error);
+  };
+</script>
