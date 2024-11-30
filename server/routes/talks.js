@@ -4,8 +4,27 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Public routes - no authentication needed
-router.get('/', (req, res) => {
+// Public route for fetching talks
+router.get('/', (req, res, next) => {
+  if (req.query.public === 'true') {
+    try {
+      const db = getDatabase();
+      const talks = db.prepare('SELECT * FROM talks').all();
+      res.json(talks);
+    } catch (error) {
+      console.error('Error fetching talks:', error);
+      res.status(500).json({ 
+        error: 'Database error',
+        message: 'Failed to fetch talks'
+      });
+    }
+  } else {
+    next(); // Pass to the protected route handler
+  }
+});
+
+// Protected route for fetching talks (admin)
+router.get('/', authenticateToken, (req, res) => {
   try {
     const db = getDatabase();
     const talks = db.prepare('SELECT * FROM talks').all();
@@ -19,7 +38,33 @@ router.get('/', (req, res) => {
   }
 });
 
-router.get('/:id', (req, res) => {
+// Public route for fetching a single talk
+router.get('/:id', (req, res, next) => {
+  if (req.query.public === 'true') {
+    try {
+      const db = getDatabase();
+      const talk = db.prepare('SELECT * FROM talks WHERE id = ?').get(req.params.id);
+      if (!talk) {
+        return res.status(404).json({ 
+          error: 'Not found',
+          message: 'Talk not found'
+        });
+      }
+      res.json(talk);
+    } catch (error) {
+      console.error('Error fetching talk:', error);
+      res.status(500).json({ 
+        error: 'Database error',
+        message: 'Failed to fetch talk'
+      });
+    }
+  } else {
+    next(); // Pass to the protected route handler
+  }
+});
+
+// Protected route for fetching a single talk (admin)
+router.get('/:id', authenticateToken, (req, res) => {
   try {
     const db = getDatabase();
     const talk = db.prepare('SELECT * FROM talks WHERE id = ?').get(req.params.id);
@@ -49,15 +94,15 @@ router.post('/', authenticateToken, (req, res) => {
       'INSERT INTO talks (title, description, speaker_id, start_time, end_time, room) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(title, description, speaker_id, start_time, end_time, room);
 
-    res.status(201).json({
-      id: result.lastInsertRowid,
-      title,
-      description,
-      speaker_id,
-      start_time,
-      end_time,
-      room
-    });
+    if (result.changes > 0) {
+      const newTalk = db.prepare('SELECT * FROM talks WHERE id = ?').get(result.lastInsertRowid);
+      res.status(201).json(newTalk);
+    } else {
+      res.status(500).json({ 
+        error: 'Database error',
+        message: 'Failed to create talk'
+      });
+    }
   } catch (error) {
     console.error('Error creating talk:', error);
     res.status(500).json({ 
@@ -76,22 +121,15 @@ router.put('/:id', authenticateToken, (req, res) => {
       'UPDATE talks SET title = ?, description = ?, speaker_id = ?, start_time = ?, end_time = ?, room = ? WHERE id = ?'
     ).run(title, description, speaker_id, start_time, end_time, room, req.params.id);
 
-    if (result.changes === 0) {
-      return res.status(404).json({ 
+    if (result.changes > 0) {
+      const updatedTalk = db.prepare('SELECT * FROM talks WHERE id = ?').get(req.params.id);
+      res.json(updatedTalk);
+    } else {
+      res.status(404).json({ 
         error: 'Not found',
         message: 'Talk not found'
       });
     }
-
-    res.json({
-      id: parseInt(req.params.id),
-      title,
-      description,
-      speaker_id,
-      start_time,
-      end_time,
-      room
-    });
   } catch (error) {
     console.error('Error updating talk:', error);
     res.status(500).json({ 
@@ -105,15 +143,15 @@ router.delete('/:id', authenticateToken, (req, res) => {
   try {
     const db = getDatabase();
     const result = db.prepare('DELETE FROM talks WHERE id = ?').run(req.params.id);
-
-    if (result.changes === 0) {
-      return res.status(404).json({ 
+    
+    if (result.changes > 0) {
+      res.status(204).send();
+    } else {
+      res.status(404).json({ 
         error: 'Not found',
         message: 'Talk not found'
       });
     }
-
-    res.status(204).send();
   } catch (error) {
     console.error('Error deleting talk:', error);
     res.status(500).json({ 

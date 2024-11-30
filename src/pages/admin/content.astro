@@ -1,0 +1,273 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Content Management">
+  <div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-8 text-gray-900 dark:text-white">Content Management</h1>
+    
+    <div id="content-editor" class="space-y-8"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  // Type definitions
+  interface ContentBlock {
+    id?: number;
+    identifier: string;
+    section: string;
+    title: string | null;
+    content: string | null;
+    image_url?: string | null;
+    order_index: number;
+    is_active: boolean;
+  }
+
+  interface UpdateContentData {
+    title: string;
+    content?: string;
+    image_url?: string;
+  }
+
+  let contentBlocks: ContentBlock[] = [];
+  let selectedSection: string = '';
+
+  // Fetch content blocks
+  const fetchContent = async (): Promise<void> => {
+    try {
+      const response = await fetch('http://localhost:3000/api/content');
+      contentBlocks = await response.json();
+      renderContent();
+    } catch (error) {
+      console.error('Error fetching content:', error);
+      showError('Failed to load content');
+    }
+  };
+
+  // Update content block
+  const updateContent = async (identifier: string, data: UpdateContentData): Promise<void> => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/content/${identifier}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) throw new Error('Failed to update content');
+      
+      showSuccess('Content updated successfully');
+      await fetchContent(); // Refresh content
+    } catch (error) {
+      console.error('Error updating content:', error);
+      showError('Failed to update content');
+    }
+  };
+
+  // Show success message
+  const showSuccess = (message: string): void => {
+    const alert = document.createElement('div');
+    alert.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+    alert.textContent = message;
+    document.body.appendChild(alert);
+    setTimeout(() => alert.remove(), 3000);
+  };
+
+  // Show error message
+  const showError = (message: string): void => {
+    const alert = document.createElement('div');
+    alert.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+    alert.textContent = message;
+    document.body.appendChild(alert);
+    setTimeout(() => alert.remove(), 3000);
+  };
+
+  // Format text helper function
+  const formatText = (text: string): string => {
+    return text
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  // Render content editor
+  const renderContent = (): void => {
+    const editorDiv = document.getElementById('content-editor');
+    if (!editorDiv) return;
+
+    // Group content blocks by section
+    const sections = [...new Set(contentBlocks.map(block => block.section))];
+    
+    // Create section filter buttons
+    const filterHtml = `
+      <div class="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Filter by Section:</label>
+        <div class="flex flex-wrap gap-2">
+          <button 
+            class="filter-button px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              selectedSection === '' 
+                ? 'bg-primary text-white' 
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+            }"
+            data-section=""
+          >
+            All Sections
+          </button>
+          ${sections.map(section => `
+            <button 
+              class="filter-button px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                selectedSection === section 
+                  ? 'bg-primary text-white' 
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }"
+              data-section="${section}"
+            >
+              ${formatText(section)}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // Create content blocks editor
+    const contentHtml = `
+      <div class="grid grid-cols-1 gap-8">
+        ${contentBlocks
+          .filter(block => selectedSection === '' || block.section === selectedSection)
+          .map(block => `
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-all duration-200 hover:shadow-lg" data-identifier="${block.identifier}">
+              <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                  <h3 class="text-lg font-semibold mb-1 text-gray-900 dark:text-white">${formatText(block.identifier)}</h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Section: ${formatText(block.section)}</p>
+                </div>
+                <button 
+                  class="save-button hidden px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  data-identifier="${block.identifier}"
+                >
+                  Save Changes
+                </button>
+              </div>
+              
+              <div class="space-y-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                  <input 
+                    type="text" 
+                    class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary dark:focus:border-primary dark:focus:ring-primary transition-colors duration-200 px-4 py-3"
+                    value="${block.title || ''}"
+                    data-field="title"
+                  >
+                </div>
+                
+                ${block.content !== null ? `
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content</label>
+                    <textarea 
+                      class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary dark:focus:border-primary dark:focus:ring-primary transition-colors duration-200 px-4 py-3"
+                      rows="4"
+                      data-field="content"
+                    >${block.content || ''}</textarea>
+                  </div>
+                ` : ''}
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Image URL</label>
+                  <input 
+                    type="text" 
+                    class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary dark:focus:border-primary dark:focus:ring-primary transition-colors duration-200 px-4 py-3"
+                    value="${block.image_url || ''}"
+                    data-field="image_url"
+                  >
+                </div>
+              </div>
+            </div>
+          `).join('')}
+      </div>
+    `;
+
+    editorDiv.innerHTML = filterHtml + contentHtml;
+
+    // Add event listeners
+    const filterButtons = document.querySelectorAll('.filter-button');
+    filterButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const section = target.getAttribute('data-section');
+        selectedSection = section || '';
+        renderContent();
+      });
+    });
+
+    // Add input change listeners
+    document.querySelectorAll('input, textarea').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const target = e.target as HTMLElement;
+        const block = target.closest('[data-identifier]');
+        if (block) {
+          const saveButton = block.querySelector('.save-button');
+          if (saveButton) {
+            saveButton.classList.remove('hidden');
+          }
+        }
+      });
+    });
+
+    // Add save button listeners
+    document.querySelectorAll('.save-button').forEach(button => {
+      button.addEventListener('click', async (e) => {
+        const target = e.target as HTMLElement;
+        const identifier = target.getAttribute('data-identifier');
+        if (!identifier) return;
+        
+        const block = document.querySelector(`[data-identifier="${identifier}"]`);
+        if (!block) return;
+        
+        const data: UpdateContentData = {
+          title: (block.querySelector('[data-field="title"]') as HTMLInputElement).value,
+          image_url: (block.querySelector('[data-field="image_url"]') as HTMLInputElement).value
+        };
+        
+        const contentField = block.querySelector('[data-field="content"]') as HTMLTextAreaElement;
+        if (contentField) {
+          data.content = contentField.value;
+        }
+        
+        await updateContent(identifier, data);
+        target.classList.add('hidden');
+      });
+    });
+  };
+
+  // Initialize
+  fetchContent();
+</script>
+
+<style>
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .filter-button {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .filter-button:hover {
+    transform: translateY(-1px);
+  }
+
+  .filter-button:active {
+    transform: translateY(0);
+  }
+
+  #content-editor > div {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+</style>

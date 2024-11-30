@@ -1,24 +1,54 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import type { Talk } from '../../utils/api/types';
 import { API_CONFIG } from '../../utils/api/config';
 
-// Fetch talks with speaker information
-const response = await fetch(`${API_CONFIG.baseUrl}/api/talks`, {
-  headers: API_CONFIG.defaultHeaders
-});
-const talks = await response.json();
+// Add a type definition for speakers
+interface Speaker {
+  id: string;
+  name: string;
+  company: string;
+}
 
-// Fetch all speakers
-const speakersResponse = await fetch(`${API_CONFIG.baseUrl}/api/speakers`, {
-  headers: API_CONFIG.defaultHeaders
-});
-const speakers = await speakersResponse.json();
+const adminToken = Astro.cookies.get('adminToken')?.value;
 
-// Create a map of speaker IDs to speaker objects for easy lookup
-const speakersMap = speakers.reduce((acc, speaker) => {
-  acc[speaker.id] = speaker;
-  return acc;
-}, {});
+if (!adminToken) {
+  return Astro.redirect('/admin/login');
+}
+
+let talks: Talk[] = [];
+let speakersMap: Record<string, Speaker> = {};
+
+try {
+  // Fetch talks with speaker information
+  const response = await fetch(`${API_CONFIG.baseUrl}/api/talks`, {
+    headers: API_CONFIG.getAuthHeaders(adminToken)
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch talks: ${response.statusText}`);
+  }
+  talks = await response.json();
+
+  // Fetch all speakers
+  const speakersResponse = await fetch(`${API_CONFIG.baseUrl}/api/speakers`, {
+    headers: API_CONFIG.getAuthHeaders(adminToken)
+  });
+  
+  if (!speakersResponse.ok) {
+    throw new Error(`Failed to fetch speakers: ${speakersResponse.statusText}`);
+  }
+  const speakers: Speaker[] = await speakersResponse.json();
+
+  // Create a map of speaker IDs to speaker objects for easy lookup
+  speakersMap = speakers.reduce((acc: Record<string, Speaker>, speaker: Speaker) => {
+    acc[speaker.id] = speaker;
+    return acc;
+  }, {} as Record<string, Speaker>);
+} catch (error) {
+  console.error('Error fetching data:', error);
+  return new Response('Error fetching data', { status: 500 });
+}
 ---
 
 <AdminLayout title="Manage Talks">
@@ -45,7 +75,7 @@ const speakersMap = speakers.reduce((acc, speaker) => {
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          {talks.map((talk) => {
+          {talks.map((talk: Talk) => {
             const speaker = speakersMap[talk.speaker_id];
             return (
               <tr>
@@ -89,7 +119,13 @@ const speakersMap = speakers.reduce((acc, speaker) => {
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.delete-talk').forEach(button => {
       button.addEventListener('click', async (e) => {
-        const talkId = e.target.dataset.talkId;
+        const target = e.target as HTMLElement;
+        const talkId = target?.dataset.talkId;
+        if (!talkId) {
+          console.error('No talk ID found');
+          return;
+        }
+
         if (!confirm('Are you sure you want to delete this talk?')) {
           return;
         }

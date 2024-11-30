@@ -19,6 +19,8 @@ export const authenticateToken = (req, res, next) => {
 
   try {
     const user = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    // Add isAdmin flag to all authenticated users for now
+    user.isAdmin = true;
     req.user = user;
     next();
   } catch (error) {
@@ -38,4 +40,14 @@ export const authenticateToken = (req, res, next) => {
       message: 'Invalid authentication token'
     });
   }
+};
+
+export const requireAdmin = (req, res, next) => {
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({
+      error: 'Access denied',
+      message: 'Admin privileges required'
+    });
+  }
+  next();
 };

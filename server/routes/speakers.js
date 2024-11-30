@@ -4,8 +4,27 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Public routes - no authentication needed
-router.get('/', (req, res) => {
+// Public route for fetching speakers
+router.get('/', (req, res, next) => {
+  if (req.query.public === 'true') {
+    try {
+      const db = getDatabase();
+      const speakers = db.prepare('SELECT * FROM speakers').all();
+      res.json(speakers);
+    } catch (error) {
+      console.error('Error fetching speakers:', error);
+      res.status(500).json({ 
+        error: 'Database error',
+        message: 'Failed to fetch speakers'
+      });
+    }
+  } else {
+    next(); // Pass to the protected route handler
+  }
+});
+
+// Protected route for fetching speakers (admin)
+router.get('/', authenticateToken, (req, res) => {
   try {
     const db = getDatabase();
     const speakers = db.prepare('SELECT * FROM speakers').all();
@@ -19,7 +38,33 @@ router.get('/', (req, res) => {
   }
 });
 
-router.get('/:id', (req, res) => {
+// Public route for fetching a single speaker
+router.get('/:id', (req, res, next) => {
+  if (req.query.public === 'true') {
+    try {
+      const db = getDatabase();
+      const speaker = db.prepare('SELECT * FROM speakers WHERE id = ?').get(req.params.id);
+      if (!speaker) {
+        return res.status(404).json({ 
+          error: 'Not found',
+          message: 'Speaker not found'
+        });
+      }
+      res.json(speaker);
+    } catch (error) {
+      console.error('Error fetching speaker:', error);
+      res.status(500).json({ 
+        error: 'Database error',
+        message: 'Failed to fetch speaker'
+      });
+    }
+  } else {
+    next(); // Pass to the protected route handler
+  }
+});
+
+// Protected route for fetching a single speaker (admin)
+router.get('/:id', authenticateToken, (req, res) => {
   try {
     const db = getDatabase();
     const speaker = db.prepare('SELECT * FROM speakers WHERE id = ?').get(req.params.id);

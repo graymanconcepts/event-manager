@@ -14,6 +14,25 @@ interface Update {
   timestamp: string;
 }
 
+interface Registration {
+  id: number;
+  name: string;
+  company?: string;
+  created_at: string;
+}
+
+interface Talk {
+  id: number;
+  title: string;
+  created_at: string;
+}
+
+interface Event {
+  id: number;
+  name: string;
+  created_at: string;
+}
+
 const AdminDashboard = () => {
   const [stats, setStats] = useState<Stats>({
     speakers: 0,
@@ -32,15 +51,28 @@ const AdminDashboard = () => {
           return;
         }
 
+        const fetchWithAuth = async (url: string) => {
+          const response = await fetch(url, {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          return Array.isArray(data) ? data : [];
+        };
+
         const [speakers, talks, registrations, events] = await Promise.all([
-          fetch('http://localhost:3000/api/speakers').then(res => res.json()),
-          fetch('http://localhost:3000/api/talks').then(res => res.json()),
-          fetch('http://localhost:3000/api/registrations', {
-            headers: { Authorization: `Bearer ${token}` }
-          }).then(res => res.json()),
-          fetch('http://localhost:3000/api/events', {
-            headers: { Authorization: `Bearer ${token}` }
-          }).then(res => res.json())
+          fetchWithAuth('http://localhost:3000/api/speakers'),
+          fetchWithAuth('http://localhost:3000/api/talks'),
+          fetchWithAuth('http://localhost:3000/api/registrations'),
+          fetchWithAuth('http://localhost:3000/api/events')
         ]);
 
         setStats({
@@ -52,22 +84,22 @@ const AdminDashboard = () => {
 
         // Get most recent items for updates
         const updates: Update[] = [
-          ...registrations.slice(-3).map((reg: any) => ({
+          ...registrations.slice(-3).map((reg: Registration) => ({
             id: reg.id,
-            type: 'registration',
+            type: 'registration' as const,
             message: `New registration: ${reg.name} from ${reg.company || 'Individual'}`,
             timestamp: new Date(reg.created_at).toLocaleString()
           })),
-          ...talks.slice(-2).map((talk: any) => ({
+          ...talks.slice(-2).map((talk: Talk) => ({
             id: talk.id,
-            type: 'talk',
+            type: 'talk' as const,
             message: `New talk scheduled: "${talk.title}"`,
             timestamp: new Date(talk.created_at).toLocaleString()
           })),
-          ...events.slice(-2).map((event: any) => ({
+          ...events.slice(-2).map((event: Event) => ({
             id: event.id,
-            type: 'event',
-            message: `New event added: "${event.title}"`,
+            type: 'event' as const,
+            message: `New event added: "${event.name}"`,
             timestamp: new Date(event.created_at).toLocaleString()
           }))
         ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -150,7 +182,7 @@ const AdminDashboard = () => {
                 <div className="flex-shrink-0">
                   {update.type === 'registration' && (
                     <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 0112 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                     </svg>
                   )}
                   {update.type === 'talk' && (
