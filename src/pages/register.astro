@@ -1,3 +1,136 @@
 ---
-return Astro.redirect('/talks');
+import Layout from '../layouts/Layout.astro';
+
+// Fetch ticket types and prices from API or define them here
+const ticketTypes = [
+  { id: 'standard', name: 'Standard Pass', price: 499, description: 'Full conference access' },
+  { id: 'vip', name: 'VIP Pass', price: 799, description: 'Full conference access + VIP networking events' },
+  { id: 'virtual', name: 'Virtual Pass', price: 199, description: 'Online access to all talks' }
+];
 ---
+
+<Layout title="Register for TechConf 2024">
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold mb-8 text-center">Register for TechConf 2024</h1>
+    
+    <div class="max-w-2xl mx-auto">
+      <form id="registration-form" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Personal Information -->
+          <div class="md:col-span-2 bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-800">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Personal Information</h2>
+            <div class="space-y-4">
+              <div>
+                <label for="name" class="block text-sm font-medium text-gray-300">Full Name *</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors"
+                />
+              </div>
+              
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-300">Email Address *</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors"
+                />
+              </div>
+              
+              <div>
+                <label for="company" class="block text-sm font-medium text-gray-300">Company</label>
+                <input
+                  type="text"
+                  id="company"
+                  name="company"
+                  class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors"
+                />
+              </div>
+              
+              <div>
+                <label for="dietary" class="block text-sm font-medium text-gray-300">Dietary Requirements</label>
+                <textarea
+                  id="dietary"
+                  name="dietary_requirements"
+                  rows="2"
+                  class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ticket Selection -->
+          <div class="md:col-span-2 bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-800">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Select Your Ticket</h2>
+            <div class="space-y-4">
+              {ticketTypes.map((ticket) => (
+                <div class="relative flex items-start p-4 border border-gray-800 bg-gray-800 rounded-lg hover:border-blue-500 cursor-pointer transition-colors">
+                  <div class="flex items-center h-5">
+                    <input
+                      type="radio"
+                      name="ticket_type"
+                      value={ticket.id}
+                      required
+                      class="h-4 w-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div class="ml-3 flex justify-between w-full">
+                    <div>
+                      <label class="font-medium text-white">
+                        {ticket.name}
+                      </label>
+                      <p class="text-gray-400">{ticket.description}</p>
+                    </div>
+                    <div class="text-lg font-semibold text-blue-400">
+                      ${ticket.price}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-center">
+          <button
+            type="submit"
+            class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg"
+          >
+            Register Now
+          </button>
+        </div>
+      </form>
+
+      <!-- Success/Error Message -->
+      <div id="message" class="mt-6 text-center hidden">
+        <p class="text-lg font-semibold"></p>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const form = document.getElementById('registration-form');
+  const messageDiv = document.getElementById('message');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target as HTMLFormElement);
+    
+    // Redirect to payment page with form data
+    const searchParams = new URLSearchParams();
+    formData.forEach((value, key) => {
+      if (value) {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    window.location.href = `/payment?${searchParams.toString()}`;
+  });
+</script>

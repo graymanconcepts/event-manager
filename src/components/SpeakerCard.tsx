@@ -7,7 +7,7 @@ interface SpeakerCardProps {
 
 export default function SpeakerCard({ speaker }: SpeakerCardProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center transform hover:scale-105 transition-transform duration-200">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
       <div className="mb-6 flex justify-center">
         <img 
           src={speaker.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(speaker.name)}&background=random`}
@@ -15,7 +15,14 @@ export default function SpeakerCard({ speaker }: SpeakerCardProps) {
           className="w-32 h-32 rounded-full object-cover border-4 border-blue-400 shadow-lg"
         />
       </div>
-      <h2 className="text-2xl font-bold mb-2 dark:text-white">{speaker.name}</h2>
+      <a 
+        href={`/speakers/${speaker.id}`}
+        className="inline-block"
+      >
+        <h2 className="text-2xl font-bold mb-2 dark:text-white hover:text-primary dark:hover:text-primary-light transition-colors">
+          {speaker.name}
+        </h2>
+      </a>
       <div className="space-y-2">
         <p className="text-gray-600 dark:text-gray-300">{speaker.role}</p>
         {speaker.company && (

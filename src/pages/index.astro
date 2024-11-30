@@ -1,22 +1,64 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+// Fetch content from our API
+const response = await fetch('http://localhost:3000/api/content');
+const contentBlocks = await response.json();
+
+// Helper function to get content by identifier
+const getContent = (identifier) => {
+  const block = contentBlocks.find(block => block.identifier === identifier);
+  return {
+    title: block?.title || '',
+    content: block?.content || '',
+    image_url: block?.image_url || ''
+  };
+};
+
+// Get hero content
+const heroTitle = getContent('hero_title');
+const heroSubtitle = getContent('hero_subtitle');
+
+// Get stats content
+const statsExperts = getContent('stats_experts');
+const statsDays = getContent('stats_days');
+const statsAttendees = getContent('stats_attendees');
+
+// Parse stats content (format: "title|description")
+const parseStats = (content) => {
+  const [title, description = ''] = content.split('|');
+  return { title, description };
+};
+
+const expertsStats = parseStats(statsExperts.content);
+const daysStats = parseStats(statsDays.content);
+const attendeesStats = parseStats(statsAttendees.content);
+
+// Get featured content
+const featuredDate = getContent('featured_date');
+const featuredLocation = getContent('featured_location');
+const featuredKeynotes = getContent('featured_keynotes');
+const featuredWorkshops = getContent('featured_workshops');
+const featuredNetworking = getContent('featured_networking');
+const featuredImage = getContent('featured_image');
+
 ---
 
-<Layout title="TechConf 2024 - Home">
+<Layout title={`${heroTitle.title} - Home`}>
   <!-- Hero Section -->
   <div class="pt-16">
     <div class="h-[600px] relative">
       <div class="absolute inset-0 bg-gradient-to-r from-primary/90 to-secondary/90 mix-blend-multiply"></div>
       <div 
         class="absolute inset-0 bg-cover bg-center"
-        style="background-image: url('https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=2070');"></div>
+        style={`background-image: url('${heroTitle.image_url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=2070'}');`}></div>
       <div class="absolute inset-0 bg-black/20"></div>
       <div class="relative h-full container mx-auto px-4 flex flex-col justify-center items-center text-white text-center">
         <h1 class="text-6xl md:text-7xl font-bold mb-6 drop-shadow-lg">
-          TechConf 2024
+          {heroTitle.title}
         </h1>
         <p class="text-2xl md:text-3xl mb-8 max-w-2xl drop-shadow-lg">
-          Where Innovation Meets Implementation
+          {heroSubtitle.title}
         </p>
         <div class="space-x-4">
           <a 
@@ -39,19 +81,19 @@ import Layout from '../layouts/Layout.astro';
     <!-- Key Info Section -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
       <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform">
-        <div class="text-primary dark:text-primary-300 text-4xl font-bold mb-2">50+</div>
+        <div class="text-primary dark:text-primary-300 text-4xl font-bold mb-2">{statsExperts.title}</div>
         <h3 class="text-xl font-bold mb-2">Industry Experts</h3>
-        <p class="text-gray-600 dark:text-gray-300">Learn from the best minds in tech</p>
+        <p class="text-gray-600 dark:text-gray-300">{expertsStats.description}</p>
       </div>
       <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform">
-        <div class="text-primary dark:text-primary-300 text-4xl font-bold mb-2">3</div>
+        <div class="text-primary dark:text-primary-300 text-4xl font-bold mb-2">{statsDays.title}</div>
         <h3 class="text-xl font-bold mb-2">Days of Learning</h3>
-        <p class="text-gray-600 dark:text-gray-300">Packed with workshops and talks</p>
+        <p class="text-gray-600 dark:text-gray-300">{daysStats.description}</p>
       </div>
       <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform">
-        <div class="text-primary dark:text-primary-300 text-4xl font-bold mb-2">1000+</div>
+        <div class="text-primary dark:text-primary-300 text-4xl font-bold mb-2">{statsAttendees.title}</div>
         <h3 class="text-xl font-bold mb-2">Attendees</h3>
-        <p class="text-gray-600 dark:text-gray-300">Network with global tech leaders</p>
+        <p class="text-gray-600 dark:text-gray-300">{attendeesStats.description}</p>
       </div>
     </div>
 
@@ -59,32 +101,32 @@ import Layout from '../layouts/Layout.astro';
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 mb-16">
       <div class="grid md:grid-cols-2 gap-8 items-center">
         <div>
-          <h2 class="text-3xl font-bold mb-4">June 15-17, 2024</h2>
-          <p class="text-xl mb-4">San Francisco Convention Center</p>
+          <h2 class="text-3xl font-bold mb-4">{featuredDate.title}</h2>
+          <p class="text-xl mb-4">{featuredLocation.title}</p>
           <ul class="space-y-3 text-gray-600 dark:text-gray-300 mb-6">
             <li class="flex items-center">
               <svg class="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
               </svg>
-              Keynotes from Industry Leaders
+              {featuredKeynotes.title}
             </li>
             <li class="flex items-center">
               <svg class="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
               </svg>
-              Hands-on Workshops
+              {featuredWorkshops.title}
             </li>
             <li class="flex items-center">
               <svg class="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
               </svg>
-              Networking Events
+              {featuredNetworking.title}
             </li>
           </ul>
         </div>
         <div class="relative h-64 rounded-lg overflow-hidden">
           <img 
-            src="https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&q=80&w=1740" 
+            src={featuredImage.image_url || 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&q=80&w=1740'} 
             alt="Conference Hall" 
             class="absolute inset-0 w-full h-full object-cover"
           />

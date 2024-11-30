@@ -33,24 +33,75 @@ try {
   console.error('Error fetching schedule data:', error);
 }
 
+// Fetch speakers to map speaker_id to speaker_name
+const speakersResponse = await fetch('http://localhost:3000/api/speakers', {
+  headers: {
+    'Authorization': `Bearer ${adminToken}`
+  }
+});
+const speakers = await speakersResponse.json();
+
+// Create a map of speaker_id to speaker_name
+const speakerMap = new Map(speakers.map((speaker: any) => [speaker.id, speaker.name]));
+
+// Define types for talks, events, and schedule items
+type Talk = {
+  id: number;
+  title: string;
+  description?: string;
+  speaker_id: number;
+  start_time: string;
+  end_time: string;
+  room?: string;
+  speaker_name?: string;
+};
+
+type Event = {
+  id: number;
+  title: string;
+  start_date: string;
+  end_date: string;
+  description?: string;
+  location?: string;
+};
+
+type ScheduleItem = {
+  id: number;
+  type: 'talk' | 'event';
+  title?: string;
+  start: Date;
+  end: Date;
+  start_time?: string;
+  end_time?: string;
+  start_date?: string;
+  end_date?: string;
+  speaker_name?: string;
+  room?: string;
+  location?: string;
+  description?: string;
+};
+
 // Combine and sort all schedule items
-const scheduleItems = [
-  ...talks.map(talk => ({
+const scheduleItems: ScheduleItem[] = [
+  ...talks.map((talk: Talk) => ({
     ...talk,
     type: 'talk',
     start: new Date(talk.start_time),
-    end: new Date(talk.end_time)
+    end: new Date(talk.end_time),
+    speaker_name: speakerMap.get(talk.speaker_id) || 'Unknown Speaker',
+    room: talk.room
   })),
-  ...events.map(event => ({
+  ...events.map((event: Event) => ({
     ...event,
     type: 'event',
-    start: new Date(event.start_time),
-    end: new Date(event.end_time)
+    start: new Date(event.start_date),
+    end: new Date(event.end_date),
+    location: event.location
   }))
-].sort((a, b) => a.start - b.start);
+].sort((a, b) => a.start.getTime() - b.start.getTime());
 
 // Group items by date
-const groupedSchedule = scheduleItems.reduce((groups, item) => {
+const groupedSchedule = scheduleItems.reduce((groups: Record<string, ScheduleItem[]>, item: ScheduleItem) => {
   const date = item.start.toLocaleDateString();
   if (!groups[date]) {
     groups[date] = [];
@@ -58,6 +109,7 @@ const groupedSchedule = scheduleItems.reduce((groups, item) => {
   groups[date].push(item);
   return groups;
 }, {});
+
 ---
 
 <AdminLayout title="Conference Schedule">

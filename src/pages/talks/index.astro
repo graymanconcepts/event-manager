@@ -1,79 +1,71 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import TalkCard from '../../components/TalkCard';
 import { API_CONFIG } from '../../utils/api/config';
+import type { Talk, Speaker } from '../../utils/api/types';
 
-// Fetch talks with speaker information
-const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.talks.list}`, {
-  headers: API_CONFIG.defaultHeaders
-});
-const talks = await response.json();
+let talks: Talk[] = [];
+let speakers: Speaker[] = [];
+let error: string | null = null;
 
-// Fetch speakers to get their details
-const speakersResponse = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.speakers.list}`, {
-  headers: API_CONFIG.defaultHeaders
-});
-const speakers = await speakersResponse.json();
+try {
+  // Fetch talks with speaker information
+  const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.talks.list}?public=true`, {
+    headers: API_CONFIG.defaultHeaders
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch talks');
+  }
+  
+  talks = await response.json();
+
+  // Fetch speakers to get their details
+  const speakersResponse = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.speakers.list}?public=true`, {
+    headers: API_CONFIG.defaultHeaders
+  });
+  
+  if (!speakersResponse.ok) {
+    throw new Error('Failed to fetch speakers');
+  }
+  
+  speakers = await speakersResponse.json();
+} catch (err) {
+  console.error('Error fetching data:', err);
+  error = 'Failed to load talks. Please try again later.';
+}
 
 // Create a map of speaker IDs to speaker objects for easy lookup
-const speakersMap = speakers.reduce((acc, speaker) => {
+const speakersMap = Array.isArray(speakers) ? speakers.reduce((acc, speaker) => {
   acc[speaker.id] = speaker;
   return acc;
-}, {});
+}, {}) : {};
 ---
 
 <Layout title="Conference Talks">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h1 class="text-4xl font-bold mb-8">Conference Talks</h1>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {talks.map((talk) => {
-        const speaker = speakersMap[talk.speaker_id];
-        return (
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-            <div class="p-6">
-              <h2 class="text-xl font-bold mb-2">{talk.title}</h2>
-              <div class="mb-4">
-                <p class="text-gray-600 dark:text-gray-400">
-                  {speaker && (
-                    <span class="font-medium">
-                      {speaker.name} - {speaker.company}
-                    </span>
-                  )}
-                </p>
-              </div>
-              
-              <p class="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">
-                {talk.description}
-              </p>
-              
-              <div class="mb-4">
-                <div class="text-sm text-gray-600 dark:text-gray-400">
-                  <p>
-                    <span class="font-medium">Start:</span>{' '}
-                    {new Date(talk.start_time).toLocaleString()}
-                  </p>
-                  <p>
-                    <span class="font-medium">End:</span>{' '}
-                    {new Date(talk.end_time).toLocaleString()}
-                  </p>
-                  <p>
-                    <span class="font-medium">Room:</span> {talk.room}
-                  </p>
-                </div>
-              </div>
-              
-              <div class="mt-4 flex justify-end">
-                <a
-                  href={`/talks/${talk.id}`}
-                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                >
-                  Register for Talk
-                </a>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+    {error && (
+      <div class="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-4 rounded-lg mb-8 text-center">
+        {error}
+      </div>
+    )}
+    
+    {!error && (!Array.isArray(talks) || talks.length === 0) && (
+      <div class="text-center text-gray-600 dark:text-gray-400">
+        <p>No talks have been announced yet. Check back soon!</p>
+      </div>
+    )}
+    
+    <div class="grid gap-6">
+      {Array.isArray(talks) && talks.map(talk => (
+        <TalkCard 
+          talk={talk} 
+          speaker={talk.speaker_id ? speakersMap[talk.speaker_id] : undefined}
+          client:load
+        />
+      ))}
     </div>
   </div>
 </Layout>

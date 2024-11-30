@@ -1,7 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import ScheduleCard from '../components/ScheduleCard';
-import { apiRequest } from '../utils/api/client';
 import { API_CONFIG } from '../utils/api/config';
 import type { Talk } from '../utils/api/types';
 
@@ -9,14 +7,29 @@ let talks: Talk[] = [];
 let error: string | null = null;
 
 try {
-  talks = await apiRequest<Talk[]>(API_CONFIG.endpoints.talks.list, { skipAuth: true });
+  // Use the standard talks endpoint with public=true query parameter
+  const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.talks.list}?public=true`, {
+    headers: API_CONFIG.defaultHeaders
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('API Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorText
+    });
+    throw new Error(`Failed to fetch schedule: ${response.status} ${response.statusText}`);
+  }
+
+  talks = await response.json();
 } catch (err) {
   console.error('Error fetching talks:', err);
   error = 'Failed to load schedule. Please try again later.';
 }
 
 // Group talks by date
-const talksByDate = talks.reduce((acc: { [key: string]: Talk[] }, talk) => {
+const talksByDate = Array.isArray(talks) ? talks.reduce((acc: { [key: string]: Talk[] }, talk) => {
   const date = new Date(talk.start_time);
   if (isNaN(date.getTime())) {
     // Handle invalid dates by grouping them under "Unscheduled"
@@ -38,7 +51,7 @@ const talksByDate = talks.reduce((acc: { [key: string]: Talk[] }, talk) => {
   }
   acc[dateStr].push(talk);
   return acc;
-}, {});
+}, {}) : {};
 
 // Sort talks within each day by start time
 Object.values(talksByDate).forEach(dayTalks => {
@@ -50,37 +63,57 @@ Object.values(talksByDate).forEach(dayTalks => {
   });
 });
 
-// Sort days chronologically, keeping "Unscheduled" at the end
 const sortedDates = Object.keys(talksByDate).sort((a, b) => {
   if (a === "Unscheduled") return 1;
   if (b === "Unscheduled") return -1;
-  return new Date(a).getTime() - new Date(b).getTime();
+  return new Date(talksByDate[a][0].start_time).getTime() - new Date(talksByDate[b][0].start_time).getTime();
 });
 ---
 
 <Layout title="Schedule - TechConf 2024">
-  <div class="max-w-4xl mx-auto">
+  <div class="max-w-7xl mx-auto px-4 py-8">
     <h1 class="text-4xl font-bold mb-8 text-center">Conference Schedule</h1>
-    
+
     {error && (
       <div class="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-4 rounded-lg mb-8 text-center">
         {error}
       </div>
     )}
-    
-    {!error && sortedDates.length === 0 && (
+
+    {!error && (!Array.isArray(talks) || talks.length === 0) && (
       <div class="text-center text-gray-600 dark:text-gray-400">
         <p>No talks have been scheduled yet. Check back soon!</p>
       </div>
     )}
-    
+
     <div class="space-y-8">
       {sortedDates.map(date => (
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 class="text-2xl font-bold mb-6 text-blue-600 dark:text-blue-400">{date}</h2>
-          <div class="space-y-6">
+          <h2 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">{date}</h2>
+          <div class="space-y-4">
             {talksByDate[date].map(talk => (
-              <ScheduleCard talk={talk} client:load />
+              <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                      {talk.title}
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                      {new Date(talk.start_time).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit'
+                      })}
+                      {talk.room && ` - ${talk.room}`}
+                    </p>
+                  </div>
+                  <a
+                    href={`/talks/${talk.id}`}
+                    class="inline-block bg-primary hover:bg-primary-dark text-white font-medium px-4 py-2 rounded-lg transition-colors"
+                  >
+                    View Details
+                  </a>
+                </div>
+              </div>
             ))}
           </div>
         </div>
