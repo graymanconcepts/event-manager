@@ -39,7 +39,11 @@ export const API_CONFIG = {
   },
   defaultHeaders: {
     'Content-Type': 'application/json'
-  }
+  },
+  getAuthHeaders: (token?: string) => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  })
 };
 
 export const LoginResponseSchema = z.object({
