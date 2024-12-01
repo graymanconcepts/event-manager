@@ -1,54 +1,117 @@
-# Astro Starter Kit: Basics
+# Event Manager
 
-```sh
-npm create astro@latest -- --template basics
-```
+A modern, full-stack event management platform designed for tech conferences and professional events. Built with Astro and Express, it provides a seamless experience for both attendees and event organizers.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+## 📱 User Interface
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+### Home Page
+![Home Page](./readme-img/home.png)
 
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
+The public-facing interface offers:
+- Dynamic hero section highlighting upcoming events
+- Featured talks and speaker showcase
+- Real-time event statistics and updates
+- Streamlined registration process
+- Responsive design for all devices
 
-## 🚀 Project Structure
+### Admin Dashboard
+![Admin Dashboard](./readme-img/admin-dashboard.png)
 
-Inside of your Astro project, you'll see the following folders and files:
+The admin interface provides:
+- Comprehensive event management tools
+- Content management system
+- Speaker and talk administration
+- Registration tracking
+- Real-time analytics
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/
-│   │   └── Card.astro
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+## 🎯 Core Features
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+### For Attendees
+- **Event Discovery**: Browse upcoming tech events and conferences
+- **Speaker Profiles**: Learn about industry experts and their talks
+- **Easy Registration**: Streamlined signup process with instant confirmation
+- **Schedule Access**: View and plan your conference schedule
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+### For Organizers
+- **Event Creation**: Set up new events with detailed information
+- **Content Management**: Edit website content through an intuitive interface
+- **Speaker Management**: Review and manage speaker submissions
+- **Registration Tracking**: Monitor attendee signups and generate reports
 
-Any static assets, like images, can be placed in the `public/` directory.
+## 🛠️ Technical Implementation
 
-## 🧞 Commands
+### Frontend
+- **Framework**: Astro.js with React components
+- **Styling**: Tailwind CSS for modern, responsive design
+- **State Management**: React hooks and context
+- **Type Safety**: TypeScript throughout
 
-All commands are run from the root of the project, from a terminal:
+### Backend
+- **Server**: Express.js
+- **Database**: SQLite with better-sqlite3
+- **Authentication**: JWT with secure cookie storage
+- **API**: RESTful endpoints with TypeScript types
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## 🚀 Getting Started
 
-## 👀 Want to learn more?
+1. **Clone and Install**
+   ```bash
+   git clone [repository-url]
+   cd event-manager
+   npm install
+   ```
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+2. **Configure Environment**
+   ```bash
+   cp .env.example .env
+   # Update .env with your settings
+   ```
+
+3. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
+   - Frontend: http://localhost:4321
+   - Backend: http://localhost:3000
+
+## 📝 Development Scripts
+
+| Command              | Purpose                                              |
+|---------------------|------------------------------------------------------|
+| `npm run dev`       | Start both frontend and backend (recommended)        |
+| `npm run dev:frontend` | Start Astro development server                    |
+| `npm run dev:backend`  | Start Express API server                          |
+| `npm run build`     | Create production build                              |
+| `npm run preview`   | Preview production build locally                     |
+
+## 🔐 Security
+
+- JWT-based authentication
+- HTTP-only cookies
+- Role-based access control
+- Input validation with Zod
+- SQL injection protection
+
+## 📚 API Documentation
+
+### Public Endpoints
+- `GET /api/events` - List all events
+- `GET /api/talks` - List all talks
+- `POST /api/registrations` - Register for an event
+
+### Protected Endpoints
+- `POST /api/admin/events` - Create event
+- `PUT /api/admin/content` - Update content
+- `GET /api/admin/registrations` - View registrations
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
